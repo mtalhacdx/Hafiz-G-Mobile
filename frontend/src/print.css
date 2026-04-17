@@ -1,0 +1,183 @@
+#print-area {
+  width: min(92vw, 340px);
+  margin: 16px auto;
+  padding: 12px 12px 10px;
+  border: 1px solid #111;
+  background: #fff;
+  color: #000;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  font-family: "Courier New", Courier, monospace;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.invoice-print-page {
+  min-height: 100vh;
+  background: #f7f2e8;
+  padding: 18px;
+}
+
+.print-screen-toolbar {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.print-screen-note {
+  text-align: center;
+  color: #1d3557;
+  font-weight: 600;
+}
+
+.print-screen-error {
+  color: #b42318;
+}
+
+.print-screen-link {
+  text-decoration: none;
+}
+
+.receipt-head {
+  text-align: center;
+  border-bottom: 1px dashed #000;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+.receipt-head h1 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: none;
+}
+
+.receipt-head p {
+  margin: 2px 0;
+}
+
+.receipt-meta {
+  margin-bottom: 8px;
+  border-bottom: 1px dashed #000;
+  padding-bottom: 8px;
+}
+
+.receipt-meta p {
+  margin: 3px 0;
+}
+
+.receipt-meta strong {
+  display: inline-block;
+  min-width: 62px;
+}
+
+.receipt-items {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+}
+
+.receipt-items th,
+.receipt-items td {
+  border-bottom: 1px dotted #000;
+  padding: 3px 2px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.receipt-items td:first-child {
+  word-break: break-word;
+}
+
+.receipt-items th:nth-child(2),
+.receipt-items th:nth-child(3),
+.receipt-items th:nth-child(4),
+.receipt-items td:nth-child(2),
+.receipt-items td:nth-child(3),
+.receipt-items td:nth-child(4) {
+  text-align: right;
+}
+
+.receipt-totals {
+  border-top: 1px dashed #000;
+  padding-top: 8px;
+}
+
+.receipt-totals p {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 3px 0;
+}
+
+.receipt-grand-total {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.receipt-footer {
+  margin-top: 10px;
+  text-align: center;
+  border-top: 1px dashed #000;
+  padding-top: 8px;
+}
+
+@media print {
+  @page salesReceipt {
+    size: 80mm auto;
+    margin: 0;
+  }
+
+  @page purchaseSheet {
+    size: 80mm auto;
+    margin: 0;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  #print-area,
+  #print-area * {
+    visibility: visible !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    background: #fff !important;
+  }
+
+  #print-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 80mm;
+    margin: 0;
+    padding: 2mm;
+    border: none;
+  }
+
+  #print-area.sales-print-sheet {
+    page: salesReceipt;
+    width: 80mm;
+    padding: 2mm;
+    border: none;
+  }
+
+  #print-area.purchase-print-sheet {
+    page: purchaseSheet;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 80mm;
+    margin: 0;
+    padding: 2mm;
+    border: none;
+  }
+
+  .print-screen-toolbar,
+  .print-screen-note {
+    display: none !important;
+  }
+}
