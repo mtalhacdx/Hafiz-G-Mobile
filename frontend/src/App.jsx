@@ -17,20 +17,22 @@ import ClaimsPage from "./pages/ClaimsPage";
 import ReportsPage from "./pages/ReportsPage";
 import SettingsPage from "./pages/SettingsPage";
 import AccessDeniedPage from "./pages/AccessDeniedPage";
+import DataBootstrapper from "./components/DataBootstrapper";
 
 const App = () => {
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
+    <DataBootstrapper>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
 
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
       <Route
         path="/products"
         element={
@@ -144,8 +146,9 @@ const App = () => {
         }
       />
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </DataBootstrapper>
   );
 };
 

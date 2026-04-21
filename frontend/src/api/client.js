@@ -1,4 +1,11 @@
 import axios from "axios";
+import {
+  buildCacheKey,
+  clearCacheStorage,
+  getCacheEntry,
+  setCacheEntry,
+  shouldCacheRequest,
+} from "./cacheStore";
 
 const DEFAULT_API_PORT = "5000";
 const browserHost = typeof window !== "undefined" ? window.location.hostname : "localhost";
@@ -17,11 +24,47 @@ client.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  const method = String(config.method || "get").toLowerCase();
+  const canCache = method === "get" && shouldCacheRequest(config.url);
+
+  if (canCache) {
+    const cacheKey = buildCacheKey(config.url, config.params || {});
+    const cached = config.skipCache ? null : getCacheEntry(cacheKey);
+
+    config.metadata = { cacheKey, cacheHit: Boolean(cached) };
+
+    if (cached) {
+      config.adapter = () =>
+        Promise.resolve({
+          data: cached.data,
+          status: 200,
+          statusText: "OK",
+          headers: { "x-cache": "HIT" },
+          config,
+          request: {},
+        });
+    }
+  }
+
   return config;
 });
 
 client.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const method = String(response.config?.method || "get").toLowerCase();
+    const metadata = response.config?.metadata;
+
+    if (method === "get" && metadata?.cacheKey && !metadata.cacheHit) {
+      setCacheEntry(metadata.cacheKey, response.data);
+    }
+
+    if (method !== "get") {
+      clearCacheStorage();
+    }
+
+    return response;
+  },
   (error) => {
     const status = error?.response?.status;
     const message = String(error?.response?.data?.message || "").toLowerCase();

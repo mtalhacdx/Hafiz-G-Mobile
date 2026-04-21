@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import client from "../api/client";
+import useCacheStatus from "../api/useCacheStatus";
+import { refreshAllData } from "../api/dataPrefetch";
 import { logout } from "../features/auth/authSlice";
 import brandLogo from "../assets/Logo.svg";
 import { useSmartPopup } from "./SmartPopupProvider";
@@ -161,12 +163,29 @@ const buildProfileFromSettings = (adminUser, role) => {
   }
 };
 
+const formatCacheTime = (value) => {
+  if (!value) {
+    return "Not synced yet";
+  }
+
+  const timestamp = new Date(value);
+  if (Number.isNaN(timestamp.getTime())) {
+    return "Not synced yet";
+  }
+
+  return new Intl.DateTimeFormat("en-PK", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(timestamp);
+};
+
 const Layout = ({ title, children }) => {
   const dispatch = useDispatch();
   const admin = useSelector((state) => state.auth.admin);
   const navigate = useNavigate();
   const location = useLocation();
   const popup = useSmartPopup();
+  const cacheStatus = useCacheStatus();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
 
@@ -326,6 +345,10 @@ const Layout = ({ title, children }) => {
     });
   };
 
+  const onRefreshData = async () => {
+    await refreshAllData();
+  };
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -384,7 +407,23 @@ const Layout = ({ title, children }) => {
         </div>
       </aside>
       <main className="main-content">
-        <h1 className="page-title">{title}</h1>
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">{title}</h1>
+            <div className="cache-meta">
+              <span>{cacheStatus.refreshing ? "Syncing data..." : `Data updated: ${formatCacheTime(cacheStatus.lastUpdated)}`}</span>
+              {cacheStatus.error ? <span className="error-text">{cacheStatus.error}</span> : null}
+            </div>
+          </div>
+          <button
+            type="button"
+            className="cache-refresh-btn"
+            onClick={onRefreshData}
+            disabled={cacheStatus.refreshing}
+          >
+            {cacheStatus.refreshing ? "Refreshing..." : "Refresh Data"}
+          </button>
+        </div>
         <section>{children}</section>
       </main>
     </div>

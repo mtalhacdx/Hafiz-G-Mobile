@@ -359,6 +359,44 @@ button {
   font-size: var(--title-size);
 }
 
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.6rem;
+}
+
+.cache-meta {
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.cache-refresh-btn {
+  border: 1px solid rgba(22, 47, 87, 0.2);
+  border-radius: 0.6rem;
+  background: linear-gradient(180deg, #ffffff, #f4efe4);
+  color: #162f57;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cache-refresh-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.cache-refresh-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(10, 20, 40, 0.12);
+}
+
 .dashboard-wrap {
   display: grid;
   gap: 1.2rem;

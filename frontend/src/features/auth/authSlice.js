@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import client from "../../api/client";
+import { clearCacheStorage } from "../../api/cacheStore";
 
 export const login = createAsyncThunk("auth/login", async (payload, thunkApi) => {
   try {
@@ -45,6 +46,7 @@ const authSlice = createSlice({
       state.error = null;
       localStorage.removeItem("token");
       localStorage.removeItem("admin");
+      clearCacheStorage();
     },
   },
   extraReducers: (builder) => {
