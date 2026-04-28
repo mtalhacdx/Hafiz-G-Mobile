@@ -9,6 +9,7 @@ const PAGE_SIZE = 10;
 const tabs = [
   { id: "sales", label: "Sales" },
   { id: "purchases", label: "Purchases" },
+  { id: "returns", label: "Returns" },
   { id: "dues", label: "Dues" },
   { id: "claims", label: "Claims" },
   { id: "stock", label: "Stock" },
@@ -39,6 +40,14 @@ const claimLossAmount = (claim) => {
 
   return Number(claim?.quantity || 0) * Number(claim?.purchasePrice || 0);
 };
+
+const calculateItemsCost = (items, productCostById) =>
+  (items || []).reduce((sum, item) => {
+    const productId = String(item?.productId?._id || item?.productId || "");
+    const purchasePrice = productCostById.get(productId) || 0;
+    const quantity = Number(item?.quantity || 0);
+    return sum + purchasePrice * quantity;
+  }, 0);
 
 const dateShort = new Intl.DateTimeFormat("en-PK", {
   dateStyle: "medium",
@@ -72,6 +81,21 @@ const resolveGeneratedByLabel = (invoice, storeName) => {
     invoice?.generatedById?.name ||
     invoice?.generatedById?.username ||
     invoice?.generatedByName ||
+    "Unknown User"
+  );
+};
+
+const resolveReceivedByLabel = (entry, storeName) => {
+  const role = String(entry?.receivedById?.role || "").toLowerCase();
+
+  if (role === "admin") {
+    return storeName || "HafizG Mobile";
+  }
+
+  return (
+    entry?.receivedById?.name ||
+    entry?.receivedById?.username ||
+    entry?.receivedByName ||
     "Unknown User"
   );
 };
@@ -229,6 +253,7 @@ const ReportsPage = () => {
 
   const [sales, setSales] = useState([]);
   const [purchases, setPurchases] = useState([]);
+  const [returnsData, setReturnsData] = useState([]);
   const [duePayments, setDuePayments] = useState([]);
   const [claims, setClaims] = useState([]);
   const [products, setProducts] = useState([]);
@@ -243,6 +268,7 @@ const ReportsPage = () => {
       const [
         salesRes,
         purchasesRes,
+        returnsRes,
         duePaymentsRes,
         claimsRes,
         productsRes,
@@ -251,6 +277,7 @@ const ReportsPage = () => {
       ] = await Promise.all([
         client.get("/sales"),
         client.get("/purchases"),
+        client.get("/returns"),
         client.get("/due-payments"),
         client.get("/claims"),
         client.get("/products"),
@@ -260,6 +287,7 @@ const ReportsPage = () => {
 
       setSales(salesRes.data?.data || []);
       setPurchases(purchasesRes.data?.data || []);
+      setReturnsData(returnsRes.data?.data || []);
       setDuePayments(duePaymentsRes.data?.data || []);
       setClaims(claimsRes.data?.data || []);
       setProducts(productsRes.data?.data || []);
@@ -346,6 +374,23 @@ const ReportsPage = () => {
         searchText: `${row.invoiceNumber || ""} ${row.partyName || ""} ${row.processedById?.name || row.processedById?.username || row.processedByName || ""} ${row.paymentMethod || ""} ${row.mode || ""}`,
       })),
     [duePayments]
+  );
+
+  const returnRows = useMemo(
+    () =>
+      returnsData.map((row) => ({
+        id: row._id,
+        date: normalizeDate(row.date),
+        ref: row.returnNumber || row._id?.slice(-6) || "-",
+        invoice: row.saleInvoiceId?.invoiceNumber || "-",
+        customer: row.customerId?.name || "Walk-in Customer",
+        receivedBy: resolveReceivedByLabel(row, storeName),
+        items: Array.isArray(row.items) ? row.items.length : 0,
+        refundMethod: (row.refundMethod || "adjustment").toUpperCase(),
+        total: Number(row.totalAmount || 0),
+        searchText: `${row.returnNumber || ""} ${row.saleInvoiceId?.invoiceNumber || ""} ${row.customerId?.name || ""} ${resolveReceivedByLabel(row, storeName)} ${(row.refundMethod || "").toLowerCase()}`,
+      })),
+    [returnsData, storeName]
   );
 
   const claimsRows = useMemo(
@@ -437,23 +482,31 @@ const ReportsPage = () => {
 
     const map = new Map();
 
+    const getExistingDay = (day) =>
+      map.get(day) || { sales: 0, returns: 0, cost: 0, returnCost: 0, purchases: 0, claimLoss: 0 };
+
     sales.forEach((row) => {
       const day = normalizeDate(row.date);
       if (!day) {
         return;
       }
 
-      const existing = map.get(day) || { sales: 0, cost: 0, purchases: 0, claimLoss: 0 };
+      const existing = getExistingDay(day);
       existing.sales += Number(row.grandTotal || 0);
 
-      const invoiceCost = (row.items || []).reduce((sum, item) => {
-        const productId = String(item?.productId?._id || item?.productId || "");
-        const purchasePrice = productCostById.get(productId) || 0;
-        const quantity = Number(item?.quantity || 0);
-        return sum + purchasePrice * quantity;
-      }, 0);
+      existing.cost += calculateItemsCost(row.items, productCostById);
+      map.set(day, existing);
+    });
 
-      existing.cost += invoiceCost;
+    returnsData.forEach((row) => {
+      const day = normalizeDate(row.date);
+      if (!day) {
+        return;
+      }
+
+      const existing = getExistingDay(day);
+      existing.returns += Number(row.totalAmount || 0);
+      existing.returnCost += calculateItemsCost(row.items, productCostById);
       map.set(day, existing);
     });
 
@@ -463,7 +516,7 @@ const ReportsPage = () => {
         return;
       }
 
-      const existing = map.get(day) || { sales: 0, cost: 0, purchases: 0, claimLoss: 0 };
+      const existing = getExistingDay(day);
       existing.purchases += Number(row.totalAmount || 0);
       map.set(day, existing);
     });
@@ -478,7 +531,7 @@ const ReportsPage = () => {
         return;
       }
 
-      const existing = map.get(day) || { sales: 0, cost: 0, purchases: 0, claimLoss: 0 };
+      const existing = getExistingDay(day);
       existing.claimLoss += claimLossAmount(row);
       map.set(day, existing);
     });
@@ -488,15 +541,18 @@ const ReportsPage = () => {
         id: day,
         date: day,
         salesAmount: value.sales,
+        returnAmount: value.returns,
+        netSalesAmount: value.sales - value.returns,
         costAmount: value.cost,
-          purchaseAmount: value.purchases,
+        returnCostAmount: value.returnCost,
+        purchaseAmount: value.purchases,
         claimLoss: value.claimLoss,
-        profit: value.sales - value.cost - value.claimLoss,
-          cashflow: value.sales - value.purchases - value.claimLoss,
+        profit: value.sales - value.returns - (value.cost - value.returnCost) - value.claimLoss,
+        cashflow: value.sales - value.returns - value.purchases - value.claimLoss,
         searchText: day,
       }))
       .sort((a, b) => b.date.localeCompare(a.date));
-        }, [sales, purchases, products, claims]);
+  }, [sales, returnsData, purchases, products, claims]);
 
   const tabMeta = useMemo(
     () => ({
@@ -539,6 +595,25 @@ const ReportsPage = () => {
           { label: "Purchase Total", value: currency.format(rows.reduce((sum, row) => sum + row.total, 0)) },
           { label: "Paid", value: currency.format(rows.reduce((sum, row) => sum + row.paid, 0)) },
           { label: "Payable", value: currency.format(rows.reduce((sum, row) => sum + row.due, 0)) },
+        ],
+      },
+      returns: {
+        title: "Return Report",
+        rows: returnRows,
+        columns: [
+          { key: "date", label: "Date", getValue: (row) => row.date },
+          { key: "ref", label: "Return #", getValue: (row) => row.ref },
+          { key: "invoice", label: "Invoice", getValue: (row) => row.invoice },
+          { key: "customer", label: "Customer", getValue: (row) => row.customer },
+          { key: "receivedBy", label: "Received By", getValue: (row) => row.receivedBy },
+          { key: "items", label: "Items", getValue: (row) => row.items },
+          { key: "refundMethod", label: "Refund Method", getValue: (row) => row.refundMethod },
+          { key: "total", label: "Total Amount", getValue: (row) => currency.format(row.total) },
+        ],
+        stats: (rows) => [
+          { label: "Returns", value: rows.length },
+          { label: "Returned Amount", value: currency.format(rows.reduce((sum, row) => sum + row.total, 0)) },
+          { label: "Returned Units", value: rows.reduce((sum, row) => sum + row.items, 0) },
         ],
       },
       dues: {
@@ -677,6 +752,8 @@ const ReportsPage = () => {
         columns: [
           { key: "date", label: "Date", getValue: (row) => row.date },
           { key: "salesAmount", label: "Sales", getValue: (row) => currency.format(row.salesAmount) },
+          { key: "returnAmount", label: "Returns", getValue: (row) => currency.format(row.returnAmount) },
+          { key: "netSalesAmount", label: "Net Sales", getValue: (row) => currency.format(row.netSalesAmount) },
           {
             key: "purchaseAmount",
             label: "Purchases",
@@ -686,6 +763,11 @@ const ReportsPage = () => {
             key: "costAmount",
             label: "COGS",
             getValue: (row) => currency.format(row.costAmount),
+          },
+          {
+            key: "returnCostAmount",
+            label: "Return COGS",
+            getValue: (row) => currency.format(row.returnCostAmount),
           },
           {
             key: "claimLoss",
@@ -702,10 +784,12 @@ const ReportsPage = () => {
             value: currency.format(rows.reduce((sum, row) => sum + row.salesAmount, 0)),
           },
           {
+            label: "Returns",
+            value: currency.format(rows.reduce((sum, row) => sum + row.returnAmount, 0)),
+          },
+          {
             label: "Costs",
-            value: currency.format(
-              rows.reduce((sum, row) => sum + row.costAmount + row.claimLoss, 0)
-            ),
+            value: currency.format(rows.reduce((sum, row) => sum + row.costAmount - row.returnCostAmount + row.claimLoss, 0)),
           },
           {
             label: "Purchases",
@@ -726,6 +810,7 @@ const ReportsPage = () => {
     [
       salesRows,
       purchaseRows,
+      returnRows,
       dueRows,
       claimsRows,
       stockRows,
@@ -838,7 +923,7 @@ const ReportsPage = () => {
             <h2>Analyze every business module with filters, selection controls, and export-ready lists</h2>
             {activeTab === "profit" ? (
               <p className="editor-subtitle">
-                Net profit includes claim impact from pending, sent to supplier, and rejected claims.
+                Net profit includes returns, reverse COGS, and claim impact from pending, sent to supplier, and rejected claims.
               </p>
             ) : null}
           </div>
