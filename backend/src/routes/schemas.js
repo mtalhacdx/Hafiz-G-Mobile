@@ -10,6 +10,14 @@ const isTodayOrFuture = (value) => {
   return inputDay >= today;
 };
 
+const isToday = (value) => {
+  const dateValue = new Date(value);
+  const inputDay = new Date(dateValue.getFullYear(), dateValue.getMonth(), dateValue.getDate());
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return inputDay.getTime() === today.getTime();
+};
+
 const bootstrapAuthSchema = z.object({
   email: z.email("Valid email is required").transform((v) => v.toLowerCase().trim()),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -71,8 +79,8 @@ const productCreateSchema = z
     name: z.string().min(2, "Product name is required"),
     brandName: z.string().min(2, "Brand name is required"),
     categoryId: objectId,
-    purchasePrice: z.number().nonnegative().multipleOf(10, "Purchase price must be in tens"),
-    salePrice: z.number().nonnegative().multipleOf(10, "Sale price must be in tens"),
+    purchasePrice: z.number().nonnegative(),
+    salePrice: z.number().nonnegative(),
     stockQuantity: z.number().int().nonnegative().default(0),
     minStockLevel: z.number().int().nonnegative().default(10),
     supplierId: objectId.nullable().optional(),
@@ -95,9 +103,8 @@ const productUpdateSchema = z
     purchasePrice: z
       .number()
       .nonnegative()
-      .multipleOf(10, "Purchase price must be in tens")
       .optional(),
-    salePrice: z.number().nonnegative().multipleOf(10, "Sale price must be in tens").optional(),
+    salePrice: z.number().nonnegative().optional(),
     minStockLevel: z.number().int().nonnegative().optional(),
     supplierId: objectId.nullable().optional(),
     isActive: z.boolean().optional(),
@@ -164,7 +171,7 @@ const salesItemSchema = z.object({
 
 const salesCreateSchema = z.object({
   customerId: objectId.optional().nullable(),
-  date: z.coerce.date().refine(isTodayOrFuture, "Invoice date cannot be in the past"),
+  date: z.coerce.date().refine(isToday, "Invoice date must be today"),
   items: z.array(salesItemSchema).min(1, "At least one item is required"),
   discount: z.number().nonnegative().optional().default(0),
   tax: z.number().nonnegative().optional().default(0),

@@ -502,6 +502,13 @@ const SalesPage = () => {
   const submitInvoice = async (event) => {
     event.preventDefault();
 
+    const today = getTodayLocalDate();
+
+    if (form.date !== today) {
+      setModalError("Invoice date must be today");
+      return;
+    }
+
     if (form.date < minBillingDate) {
       setModalError("Invoice date cannot be in the past");
       return;
@@ -875,8 +882,10 @@ const SalesPage = () => {
                     type="date"
                     required
                     min={minBillingDate}
+                    max={minBillingDate}
                     value={form.date}
                     onChange={(event) => onFieldChange("date", event.target.value)}
+                    disabled
                   />
                 </label>
 
