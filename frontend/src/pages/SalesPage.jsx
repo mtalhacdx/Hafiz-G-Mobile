@@ -892,9 +892,6 @@ const SalesPage = () => {
                 <section className="sales-lines">
                   <div className="sales-lines-head">
                     <h4>Invoice Items</h4>
-                    <button type="button" className="ghost-btn" onClick={addLine}>
-                      Add Line
-                    </button>
                   </div>
 
                   <div className="sales-lines-grid">
@@ -974,6 +971,12 @@ const SalesPage = () => {
                         </button>
                       </div>
                     ))}
+                  </div>
+
+                  <div className="sales-lines-footer">
+                    <button type="button" className="ghost-btn" onClick={addLine}>
+                      Add Line
+                    </button>
                   </div>
                 </section>
 

@@ -265,6 +265,40 @@ const CategoriesPage = () => {
     }
   };
 
+  const deleteCategory = async (categoryId) => {
+    const confirmed = await popup.confirm({
+      title: "Delete Category",
+      message: "Delete this category permanently?",
+      confirmText: "Delete",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setError("");
+      setNotice("");
+      await client.delete(`/categories/${categoryId}/permanent`);
+      setNotice("Category deleted");
+      await loadBase();
+      setPage(1);
+    } catch (deleteError) {
+      const message = deleteError.response?.data?.message || "Failed to delete category";
+
+      if (deleteError.response?.status === 409) {
+        await popup.alert({
+          title: "Delete Category",
+          message,
+          confirmText: "OK",
+        });
+        return;
+      }
+
+      setError(message);
+    }
+  };
+
   const activateCategory = async (category) => {
     const confirmed = await popup.confirm({
       title: "Activate Category",
@@ -397,6 +431,13 @@ const CategoriesPage = () => {
                                 Activate
                               </button>
                             )}
+                            <button
+                              type="button"
+                              className="danger-btn danger-btn-hard"
+                              onClick={() => deleteCategory(category._id)}
+                            >
+                              Delete
+                            </button>
                           </td>
                         </tr>
                       );

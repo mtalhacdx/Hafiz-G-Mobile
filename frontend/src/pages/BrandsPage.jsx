@@ -258,6 +258,29 @@ const BrandsPage = () => {
     }
   };
 
+  const deleteBrand = async (brandId) => {
+    const confirmed = await popup.confirm({
+      title: "Delete Brand",
+      message: "Delete this brand permanently?",
+      confirmText: "Delete",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setError("");
+      setNotice("");
+      await client.delete(`/brands/${brandId}/permanent`);
+      setNotice("Brand deleted");
+      await loadBase();
+      setPage(1);
+    } catch (deleteError) {
+      setError(deleteError.response?.data?.message || "Failed to delete brand");
+    }
+  };
+
   const activateBrand = async (brand) => {
     const confirmed = await popup.confirm({
       title: "Activate Brand",
@@ -382,6 +405,13 @@ const BrandsPage = () => {
                                 Activate
                               </button>
                             )}
+                            <button
+                              type="button"
+                              className="danger-btn danger-btn-hard"
+                              onClick={() => deleteBrand(brand._id)}
+                            >
+                              Delete
+                            </button>
                           </td>
                         </tr>
                       );

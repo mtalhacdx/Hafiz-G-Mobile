@@ -5,6 +5,7 @@ const {
   getCategories,
   updateCategory,
   deleteCategory,
+  permanentlyDeleteCategory,
 } = require("../controllers/categoryController");
 const { requireAuth, requireRole } = require("../middlewares/authMiddleware");
 const { validateBody } = require("../middlewares/validate");
@@ -17,6 +18,7 @@ router.use(requireAuth);
 router.get("/", getCategories);
 router.post("/", requireRole("admin"), validateBody(categoryCreateSchema), createCategory);
 router.put("/:id", requireRole("admin"), validateBody(categoryUpdateSchema), updateCategory);
+router.delete("/:id/permanent", requireRole("admin"), permanentlyDeleteCategory);
 router.delete("/:id", requireRole("admin"), deleteCategory);
 
 module.exports = router;

@@ -1,4 +1,5 @@
 const Category = require("../models/Category");
+const Product = require("../models/Product");
 const { ApiError } = require("../utils/apiError");
 
 const createCategory = async (req, res, next) => {
@@ -65,9 +66,30 @@ const deleteCategory = async (req, res, next) => {
   }
 };
 
+const permanentlyDeleteCategory = async (req, res, next) => {
+  try {
+    const linkedProducts = await Product.countDocuments({ categoryId: req.params.id, isActive: true });
+
+    if (linkedProducts > 0) {
+      throw new ApiError(409, "Category has active products. Deactivate it instead.");
+    }
+
+    const category = await Category.findByIdAndDelete(req.params.id);
+
+    if (!category) {
+      throw new ApiError(404, "Category not found");
+    }
+
+    res.json({ success: true, message: "Category deleted" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createCategory,
   getCategories,
   updateCategory,
   deleteCategory,
+  permanentlyDeleteCategory,
 };

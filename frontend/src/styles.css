@@ -1434,6 +1434,20 @@ button {
   color: #18385b;
 }
 
+.table-actions .danger-btn {
+  width: fit-content;
+}
+
+.table-actions .danger-btn-hard {
+  background: linear-gradient(135deg, #cb2626, #941818);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(163, 21, 21, 0.22);
+}
+
+.table-actions .danger-btn-hard:hover:not(:disabled) {
+  filter: brightness(1.04);
+}
+
 .primary-btn {
   background: #163a66;
   color: #f8feff;
@@ -1777,6 +1791,12 @@ button {
 .sales-lines-grid {
   display: grid;
   gap: 0.65rem;
+}
+
+.sales-lines-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
 }
 
 .sales-line-row {

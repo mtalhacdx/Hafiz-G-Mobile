@@ -70,9 +70,24 @@ const deleteBrand = async (req, res, next) => {
   }
 };
 
+const permanentlyDeleteBrand = async (req, res, next) => {
+  try {
+    const brand = await Brand.findByIdAndDelete(req.params.id);
+
+    if (!brand) {
+      throw new ApiError(404, "Brand not found");
+    }
+
+    res.json({ success: true, message: "Brand deleted" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createBrand,
   getBrands,
   updateBrand,
   deleteBrand,
+  permanentlyDeleteBrand,
 };
