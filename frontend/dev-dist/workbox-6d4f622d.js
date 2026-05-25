@@ -2,7 +2,7 @@ define(['exports'], (function (exports) { 'use strict';
 
     // @ts-ignore
     try {
-      self['workbox:core:7.3.0'] && _();
+      self['workbox:core:7.4.0'] && _();
     } catch (e) {}
 
     /*
@@ -455,7 +455,7 @@ define(['exports'], (function (exports) { 'use strict';
 
     // @ts-ignore
     try {
-      self['workbox:routing:7.3.0'] && _();
+      self['workbox:routing:7.4.0'] && _();
     } catch (e) {}
 
     /*
@@ -1542,7 +1542,7 @@ define(['exports'], (function (exports) { 'use strict';
 
     // @ts-ignore
     try {
-      self['workbox:expiration:7.3.0'] && _();
+      self['workbox:expiration:7.4.0'] && _();
     } catch (e) {}
 
     /*
@@ -2136,7 +2136,7 @@ define(['exports'], (function (exports) { 'use strict';
 
     // @ts-ignore
     try {
-      self['workbox:strategies:7.3.0'] && _();
+      self['workbox:strategies:7.4.0'] && _();
     } catch (e) {}
 
     /*
@@ -3388,7 +3388,7 @@ define(['exports'], (function (exports) { 'use strict';
 
     // @ts-ignore
     try {
-      self['workbox:precaching:7.3.0'] && _();
+      self['workbox:precaching:7.4.0'] && _();
     } catch (e) {}
 
     /*
@@ -3692,7 +3692,7 @@ define(['exports'], (function (exports) { 'use strict';
         statusText: clonedResponse.statusText
       };
       // Apply any user modifications.
-      const modifiedResponseInit = modifier ? modifier(responseInit) : responseInit;
+      const modifiedResponseInit = responseInit;
       // Create the new response from the body stream and `ResponseInit`
       // modifications. Note: not all browsers support the Response.body stream,
       // so fall back to reading the entire body into memory as a blob.

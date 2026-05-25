@@ -6,12 +6,19 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { store } from "./app/store";
 import { SmartPopupProvider } from "./components/SmartPopupProvider";
-import { registerServiceWorker } from "./utils/pwa";
 import "./print.css";
 import "./styles.css";
 
-// Register service worker for PWA functionality
-registerServiceWorker();
+import { registerSW } from "virtual:pwa-register";
+
+registerSW({
+  onNeedRefresh() {
+    console.log("New content available");
+  },
+  onOfflineReady() {
+    console.log("App ready offline");
+  },
+});
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

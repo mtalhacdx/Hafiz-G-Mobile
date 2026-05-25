@@ -9,7 +9,7 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "apple-touch-icon.png"],
       manifest: {
-        name: "Hafiz G Mobile",
+        name: "SMS",
         short_name: "Hafiz G",
         description: "Mobile inventory management system for Hafiz G",
         theme_color: "#ffffff",
@@ -20,21 +20,22 @@ export default defineConfig({
         start_url: "/",
         icons: [
           {
-            src: "pwa-192x192.png",
+            src: "pwa-192x192.jpg",
             sizes: "192x192",
-            type: "image/png",
+            type: "image/jpeg",
             purpose: "any",
           },
           {
-            src: "pwa-512x512.png",
+            src: "pwa-512x512.jpg",
             sizes: "512x512",
-            type: "image/png",
+            type: "image/jpeg",
             purpose: "any",
           },
         ],
         categories: ["business", "productivity"],
       },
       workbox: {
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10 MB
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,gif,webp}"],
         runtimeCaching: [
           {
