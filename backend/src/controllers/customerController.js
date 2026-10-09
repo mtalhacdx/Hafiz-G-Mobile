@@ -69,9 +69,24 @@ const deleteCustomer = async (req, res, next) => {
   }
 };
 
+const permanentlyDeleteCustomer = async (req, res, next) => {
+  try {
+    const customer = await Customer.findByIdAndDelete(req.params.id);
+
+    if (!customer) {
+      throw new ApiError(404, "Customer not found");
+    }
+
+    res.json({ success: true, message: "Customer deleted" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createCustomer,
   getCustomers,
   updateCustomer,
   deleteCustomer,
+  permanentlyDeleteCustomer,
 };

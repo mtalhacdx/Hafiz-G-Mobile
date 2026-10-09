@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 import Layout from "../components/Layout";
 import { useSmartPopup } from "../components/SmartPopupProvider";
 import client from "../api/client";
@@ -24,6 +25,8 @@ const emptyForm = {
 
 const SuppliersPage = () => {
   const popup = useSmartPopup();
+  const admin = useSelector((state) => state.auth.admin);
+  const isSmallManager = (admin?.role || "admin") === "small_manager";
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
@@ -295,6 +298,28 @@ const SuppliersPage = () => {
     }
   };
 
+  const permanentlyDeleteSupplier = async (supplierId) => {
+    const confirmed = await popup.confirm({
+      title: "Delete Supplier",
+      message: "Delete this supplier permanently? This action cannot be undone.",
+      confirmText: "Delete",
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setError("");
+      setNotice("");
+      await client.delete(`/suppliers/${supplierId}/permanent`);
+      setNotice("Supplier deleted");
+      await loadBase();
+      setPage(1);
+    } catch (deleteError) {
+      setError(deleteError.response?.data?.message || "Failed to delete supplier");
+    }
+  };
+
   const activateSupplier = async (supplier) => {
     const confirmed = await popup.confirm({
       title: "Activate Supplier",
@@ -433,6 +458,11 @@ const SuppliersPage = () => {
                                 Activate
                               </button>
                             )}
+                            {!isSmallManager ? (
+                              <button type="button" onClick={() => permanentlyDeleteSupplier(supplier._id)}>
+                                Delete
+                              </button>
+                            ) : null}
                           </td>
                         </tr>
                       );

@@ -2,7 +2,7 @@ const { z } = require("zod");
 
 const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid id");
 
-const SHOP_TIME_ZONE = "Asia/Karachi";
+const SHOP_TIME_ZONE = "UTC";
 
 // Returns "YYYY-MM-DD" for the given date in the shop's timezone
 const toDateKey = (value) =>

@@ -5,6 +5,7 @@ const {
   getCustomers,
   updateCustomer,
   deleteCustomer,
+  permanentlyDeleteCustomer,
 } = require("../controllers/customerController");
 const { requireAuth, requireRole } = require("../middlewares/authMiddleware");
 const { validateBody } = require("../middlewares/validate");
@@ -17,6 +18,7 @@ router.use(requireAuth);
 router.get("/", getCustomers);
 router.post("/", validateBody(customerCreateSchema), createCustomer);
 router.put("/:id", validateBody(customerUpdateSchema), updateCustomer);
+router.delete("/:id/permanent", requireRole("admin"), permanentlyDeleteCustomer);
 router.delete("/:id", requireRole("admin"), deleteCustomer);
 
 module.exports = router;

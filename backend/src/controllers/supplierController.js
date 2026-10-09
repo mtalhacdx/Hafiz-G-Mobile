@@ -69,9 +69,24 @@ const deleteSupplier = async (req, res, next) => {
   }
 };
 
+const permanentlyDeleteSupplier = async (req, res, next) => {
+  try {
+    const supplier = await Supplier.findByIdAndDelete(req.params.id);
+
+    if (!supplier) {
+      throw new ApiError(404, "Supplier not found");
+    }
+
+    res.json({ success: true, message: "Supplier deleted" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createSupplier,
   getSuppliers,
   updateSupplier,
   deleteSupplier,
+  permanentlyDeleteSupplier,
 };

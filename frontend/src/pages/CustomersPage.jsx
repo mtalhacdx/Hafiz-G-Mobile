@@ -294,6 +294,28 @@ const CustomersPage = () => {
     }
   };
 
+  const permanentlyDeleteCustomer = async (customerId) => {
+    const confirmed = await popup.confirm({
+      title: "Delete Customer",
+      message: "Delete this customer permanently? This action cannot be undone.",
+      confirmText: "Delete",
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setError("");
+      setNotice("");
+      await client.delete(`/customers/${customerId}/permanent`);
+      setNotice("Customer deleted");
+      await loadBase();
+      setPage(1);
+    } catch (deleteError) {
+      setError(deleteError.response?.data?.message || "Failed to delete customer");
+    }
+  };
+
   const activateCustomer = async (customer) => {
     const confirmed = await popup.confirm({
       title: "Activate Customer",
@@ -436,6 +458,12 @@ const CustomersPage = () => {
                                     Activate
                                   </button>
                                   )
+                              : null}
+                              {!isSmallManager ? (
+                                <button type="button" onClick={() => permanentlyDeleteCustomer(customer._id)}>
+                                  Delete
+                                </button>
+                              )
                               : null}
                           </td>
                         </tr>
