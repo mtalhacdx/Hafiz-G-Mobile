@@ -2,21 +2,20 @@ const { z } = require("zod");
 
 const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid id");
 
-const isTodayOrFuture = (value) => {
-  const dateValue = new Date(value);
-  const inputDay = new Date(dateValue.getFullYear(), dateValue.getMonth(), dateValue.getDate());
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  return inputDay >= today;
-};
+const SHOP_TIME_ZONE = "Asia/Karachi";
 
-const isToday = (value) => {
-  const dateValue = new Date(value);
-  const inputDay = new Date(dateValue.getFullYear(), dateValue.getMonth(), dateValue.getDate());
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  return inputDay.getTime() === today.getTime();
-};
+// Returns "YYYY-MM-DD" for the given date in the shop's timezone
+const toDateKey = (value) =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: SHOP_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(value));
+
+const isTodayOrFuture = (value) => toDateKey(value) >= toDateKey(new Date());
+
+const isToday = (value) => toDateKey(value) === toDateKey(new Date());
 
 const bootstrapAuthSchema = z.object({
   email: z.email("Valid email is required").transform((v) => v.toLowerCase().trim()),

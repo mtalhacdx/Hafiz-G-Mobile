@@ -783,7 +783,7 @@ const PurchasesPage = () => {
                   <div className="sales-lines-head">
                     <h4>Purchase Items</h4>
                     <button type="button" className="ghost-btn" onClick={addLine}>
-                      Add Line
+                      Add Product
                     </button>
                   </div>
 

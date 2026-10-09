@@ -181,3 +181,36 @@
     display: none !important;
   }
 }
+
+@media print {
+  html,
+  body {
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .invoice-print-page {
+    min-height: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-screen-toolbar {
+    display: none !important;
+  }
+
+  .thermal-receipt {
+    width: 80mm;
+    margin: 0;
+    padding: 2mm 3mm;
+    box-sizing: border-box;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .receipt-items tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+

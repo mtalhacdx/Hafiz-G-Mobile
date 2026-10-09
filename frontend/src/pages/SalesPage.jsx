@@ -31,9 +31,15 @@ const timeOnly = new Intl.DateTimeFormat("en-PK", {
 });
 
 const getTodayLocalDate = () => {
-  const now = new Date();
-  const localTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-  return localTime.toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Karachi",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+
+  return `${values.year}-${values.month}-${values.day}`;
 };
 
 const emptyItem = {
@@ -535,7 +541,7 @@ const SalesPage = () => {
 
       const payload = {
         customerId: form.customerId || null,
-        date: new Date(form.date),
+        date: `${form.date}T12:00:00+05:00`,
         items: invoiceTotals.normalizedItems.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
@@ -975,7 +981,7 @@ const SalesPage = () => {
 
                   <div className="sales-lines-footer">
                     <button type="button" className="ghost-btn" onClick={addLine}>
-                      Add Line
+                      Add Product
                     </button>
                   </div>
                 </section>

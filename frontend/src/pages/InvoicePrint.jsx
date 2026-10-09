@@ -4,14 +4,21 @@ import client from "../api/client";
 
 const SETTINGS_STORAGE_KEY = "hafizg_settings_v1";
 
+// Plain number formatting - no "Rs" / "PKR" symbol
 const currency = new Intl.NumberFormat("en-PK", {
-  style: "currency",
-  currency: "PKR",
   maximumFractionDigits: 0,
 });
 
+// Extra space between the Qty and Price columns
+const qtyCellStyle = { paddingRight: "28px", textAlign: "center" };
+const priceCellStyle = { paddingLeft: "14px", textAlign: "center" };
+
+// Center the Item column
+const itemCellStyle = { textAlign: "start" };
+
 const dateOnly = new Intl.DateTimeFormat("en-PK", {
   dateStyle: "medium",
+  timeZone: "Asia/Karachi",
 });
 
 const timeOnly = new Intl.DateTimeFormat("en-PK", {
@@ -78,7 +85,7 @@ const InvoicePrint = () => {
       try {
         setLoading(true);
         setError("");
-        const response = await client.get(`/sales/${invoiceId}`);
+        const response = await client.get(`/sales/${invoiceId}`, { skipCache: true });
         setInvoice(response.data?.data || null);
       } catch (fetchError) {
         setError(fetchError.response?.data?.message || "Failed to load invoice");
@@ -147,18 +154,18 @@ const InvoicePrint = () => {
             <table className="receipt-items">
               <thead>
                 <tr>
-                  <th>Item</th>
-                  <th>Qty</th>
-                  <th>Unit</th>
+                  <th style={itemCellStyle}>Item</th>
+                  <th style={qtyCellStyle}>Qty</th>
+                  <th style={priceCellStyle}>Unit</th>
                   <th>Subtotal</th>
                 </tr>
               </thead>
               <tbody>
                 {(invoice.items || []).map((item, index) => (
                   <tr key={`${invoice._id}-print-item-${index}`}>
-                    <td>{item.productId?.name || "-"}</td>
-                    <td>{item.quantity}</td>
-                    <td>{currency.format(Number(item.unitPrice || 0))}</td>
+                    <td style={itemCellStyle}>{item.productId?.name || "-"}</td>
+                    <td style={qtyCellStyle}>{item.quantity}</td>
+                    <td style={priceCellStyle}>{currency.format(Number(item.unitPrice || 0))}</td>
                     <td>{currency.format(Number(item.subtotal || 0))}</td>
                   </tr>
                 ))}
