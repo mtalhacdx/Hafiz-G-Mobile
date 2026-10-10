@@ -70,38 +70,45 @@ const createSale = async (req, res, next) => {
       const productById = new Map();
       const requestedByProductId = new Map();
 
+      const productIds = [...new Set(payload.items.map((item) => String(item.productId)))];
+      const products = await applySession(
+        Product.find({ _id: { $in: productIds }, isActive: true }),
+        session
+      );
+      products.forEach((product) => productById.set(String(product._id), product));
+
+      const categoryIds = [...new Set(products.map((product) => String(product.categoryId)))];
+      const categories = await applySession(
+        Category.find({ _id: { $in: categoryIds }, isActive: true }).select("_id"),
+        session
+      );
+      const activeCategoryIds = new Set(categories.map((category) => String(category._id)));
+
+      const brandNames = [...new Set(products.map((product) => product.brandName))];
+      const brands = await applySession(
+        Brand.find({ brandName: { $in: brandNames }, isActive: true }).select("brandName"),
+        session
+      );
+      const activeBrandNames = new Set(brands.map((brand) => brand.brandName));
+
       for (const item of payload.items) {
-        const product = await applySession(
-          Product.findOne({ _id: item.productId, isActive: true }),
-          session
-        );
+        const product = productById.get(String(item.productId));
 
         if (!product) {
           throw new ApiError(404, "Product not found");
         }
 
-        const category = await applySession(
-          Category.findOne({ _id: product.categoryId, isActive: true }),
-          session
-        );
-
-        if (!category) {
+        if (!activeCategoryIds.has(String(product.categoryId))) {
           throw new ApiError(400, `${product.name} cannot be sold because its category is inactive`);
         }
 
-        const brand = await applySession(
-          Brand.findOne({ brandName: product.brandName, isActive: true }),
-          session
-        );
-
-        if (!brand) {
+        if (!activeBrandNames.has(product.brandName)) {
           throw new ApiError(400, `${product.name} cannot be sold because its brand is inactive`);
         }
 
         const productId = String(product._id);
         const totalRequested = (requestedByProductId.get(productId) || 0) + Number(item.quantity || 0);
         requestedByProductId.set(productId, totalRequested);
-        productById.set(productId, product);
         preparedLines.push({ item, product });
       }
 
@@ -133,9 +140,21 @@ const createSale = async (req, res, next) => {
           unitPrice,
           subtotal: lineSubtotal,
         });
+      }
 
-        product.stockQuantity -= item.quantity;
-        await saveWithOptionalSession(product, session);
+      const stockOperations = [...requestedByProductId.entries()].map(([productId, quantity]) => ({
+        updateOne: {
+          filter: { _id: productId, isActive: true, stockQuantity: { $gte: quantity } },
+          update: { $inc: { stockQuantity: -quantity } },
+        },
+      }));
+      const stockResult = await Product.bulkWrite(
+        stockOperations,
+        session ? { session } : undefined
+      );
+
+      if (stockResult.matchedCount !== stockOperations.length) {
+        throw new ApiError(409, "Stock changed while creating the invoice. Please try again.");
       }
 
       const discount = payload.discount || 0;
