@@ -80,12 +80,15 @@ const ReturnsPage = () => {
     return JSON.stringify(form) !== JSON.stringify(baseline);
   }, [form]);
 
-  const loadBase = async () => {
+  const loadBase = async ({ fresh = false } = {}) => {
     try {
       setLoading(true);
       setError("");
 
-      const [returnsRes, salesRes] = await Promise.all([client.get("/returns"), client.get("/sales")]);
+      const [returnsRes, salesRes] = await Promise.all([
+        client.get("/returns", { skipCache: fresh }),
+        client.get("/sales", { skipCache: fresh }),
+      ]);
       setReturnsData(returnsRes.data?.data || []);
       setSales(salesRes.data?.data || []);
     } catch (fetchError) {
@@ -274,7 +277,7 @@ const ReturnsPage = () => {
       await client.post("/returns", payload);
       setNotice("Product return recorded successfully");
       await closeBuilder(true);
-      await loadBase();
+      await loadBase({ fresh: true });
       setPage(1);
     } catch (saveError) {
       setModalError(saveError.response?.data?.message || "Failed to record product return");

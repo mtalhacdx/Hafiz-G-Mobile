@@ -91,6 +91,13 @@ const createReturn = async (req, res, next) => {
 
       let totalAmount = 0;
       const returnItems = [];
+      const productIds = [...new Set(payload.items.map((item) => String(item.productId)))];
+      const products = await applySession(
+        Product.find({ _id: { $in: productIds }, isActive: true }).select("_id"),
+        session
+      );
+      const productById = new Map(products.map((product) => [String(product._id), product]));
+      const stockIncrements = new Map();
 
       for (const requestedItem of payload.items) {
         const productId = String(requestedItem.productId);
@@ -114,17 +121,14 @@ const createReturn = async (req, res, next) => {
           throw new ApiError(400, "Invalid product line selected for return");
         }
 
-        const product = await applySession(
-          Product.findOne({ _id: requestedItem.productId, isActive: true }),
-          session
-        );
-
-        if (!product) {
+        if (!productById.has(productId)) {
           throw new ApiError(404, "Product not found");
         }
 
-        product.stockQuantity += requestedItem.quantity;
-        await saveWithOptionalSession(product, session);
+        stockIncrements.set(
+          productId,
+          (stockIncrements.get(productId) || 0) + requestedItem.quantity
+        );
 
         const unitPrice = Number(saleLine.unitPrice || 0);
         const subtotal = Number((unitPrice * requestedItem.quantity).toFixed(2));
@@ -137,6 +141,21 @@ const createReturn = async (req, res, next) => {
           subtotal,
           reason: requestedItem.reason || "",
         });
+      }
+
+      const stockOperations = [...stockIncrements.entries()].map(([productId, quantity]) => ({
+        updateOne: {
+          filter: { _id: productId, isActive: true },
+          update: { $inc: { stockQuantity: quantity } },
+        },
+      }));
+      const stockResult = await Product.bulkWrite(
+        stockOperations,
+        session ? { session } : undefined
+      );
+
+      if (stockResult.matchedCount !== stockOperations.length) {
+        throw new ApiError(409, "Stock changed while recording the return. Please try again.");
       }
 
       const createdReturn = await createWithOptionalSession(
