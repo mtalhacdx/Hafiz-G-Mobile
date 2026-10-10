@@ -144,15 +144,15 @@ const SalesPage = () => {
   const [customerOptionsOpen, setCustomerOptionsOpen] = useState(false);
   const [productOptionsOpenIndex, setProductOptionsOpenIndex] = useState(null);
 
-  const loadBase = async () => {
+  const loadBase = async ({ fresh = false } = {}) => {
     try {
       setLoading(true);
       setError("");
 
       const [salesRes, customersRes, productsRes] = await Promise.all([
-        client.get("/sales"),
-        client.get("/customers"),
-        client.get("/products"),
+        client.get("/sales", { skipCache: fresh }),
+        client.get("/customers", { skipCache: fresh }),
+        client.get("/products", { skipCache: fresh }),
       ]);
 
       setSales(salesRes.data?.data || []);
@@ -551,7 +551,7 @@ const SalesPage = () => {
       await client.post("/sales", payload);
       setNotice("Sale invoice created successfully");
       await closeBuilder(true);
-      await loadBase();
+      await loadBase({ fresh: true });
       setPage(1);
     } catch (saveError) {
       const message = saveError.response?.data?.message || "Failed to create sale invoice";
