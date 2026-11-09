@@ -164,6 +164,63 @@ const addPurchasePayment = async (req, res, next) => {
   }
 };
 
+const deletePurchase = async (req, res, next) => {
+  try {
+    const deleted = await runWithOptionalTransaction(async (session) => {
+      const invoice = await applySession(PurchaseInvoice.findById(req.params.id), session);
+
+      if (!invoice) {
+        throw new ApiError(404, "Purchase invoice not found");
+      }
+
+      const quantityByProduct = invoice.items.reduce((quantities, item) => {
+        const productId = String(item.productId);
+        quantities.set(productId, (quantities.get(productId) || 0) + Number(item.quantity || 0));
+        return quantities;
+      }, new Map());
+
+      for (const [productId, quantity] of quantityByProduct) {
+        const product = await applySession(Product.findById(productId), session);
+
+        if (product) {
+          product.stockQuantity = Number(product.stockQuantity || 0) - quantity;
+          await saveWithOptionalSession(product, session);
+        }
+      }
+
+      const supplier = await applySession(Supplier.findById(invoice.supplierId), session);
+      const outstandingAmount = Math.max(
+        0,
+        Number(invoice.totalAmount || 0) - Number(invoice.paidAmount || 0)
+      );
+
+      if (supplier) {
+        supplier.balance = Number(Math.max(0, Number(supplier.balance || 0) - outstandingAmount).toFixed(2));
+        await saveWithOptionalSession(supplier, session);
+      }
+
+      await applySession(
+        DuePayment.deleteMany({
+          sourceInvoiceType: "purchase",
+          sourceInvoiceId: invoice._id,
+        }),
+        session
+      );
+      await applySession(PurchaseInvoice.deleteOne({ _id: invoice._id }), session);
+
+      return invoice;
+    });
+
+    res.json({
+      success: true,
+      data: { id: deleted._id, purchaseInvoiceNumber: deleted.purchaseInvoiceNumber },
+      message: "Purchase invoice removed successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getPurchases = async (req, res, next) => {
   try {
     const { supplierId, fromDate, toDate } = req.query;
@@ -215,4 +272,5 @@ module.exports = {
   getPurchases,
   getPurchaseById,
   addPurchasePayment,
+  deletePurchase,
 };

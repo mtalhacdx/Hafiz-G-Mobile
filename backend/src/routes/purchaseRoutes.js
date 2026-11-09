@@ -5,6 +5,7 @@ const {
 	getPurchases,
 	getPurchaseById,
 	addPurchasePayment,
+	deletePurchase,
 } = require("../controllers/purchaseController");
 const { requireAuth, requireRole } = require("../middlewares/authMiddleware");
 const { validateBody } = require("../middlewares/validate");
@@ -18,5 +19,6 @@ router.get("/", getPurchases);
 router.get("/:invoiceId", getPurchaseById);
 router.post("/", requireRole("admin"), validateBody(purchaseCreateSchema), createPurchase);
 router.patch("/:id/payment", requireRole("admin"), validateBody(purchasePaymentUpdateSchema), addPurchasePayment);
+router.delete("/:id", requireRole("admin"), deletePurchase);
 
 module.exports = router;

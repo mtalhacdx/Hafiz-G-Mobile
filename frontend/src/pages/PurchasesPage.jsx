@@ -58,6 +58,7 @@ const PurchasesPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settlingPayment, setSettlingPayment] = useState(false);
+  const [deletingPurchase, setDeletingPurchase] = useState(false);
   const [purchases, setPurchases] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -560,6 +561,36 @@ const PurchasesPage = () => {
     }
   };
 
+  const removePurchase = async () => {
+    if (!selectedPurchase || deletingPurchase) {
+      return;
+    }
+
+    const confirmed = await popup.confirm({
+      title: "Remove Purchase",
+      message: `Remove purchase invoice ${selectedPurchase.purchaseInvoiceNumber}? This will reverse its stock and supplier balance changes.`,
+      confirmText: "Remove Purchase",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeletingPurchase(true);
+      setError("");
+      await client.delete(`/purchases/${selectedPurchase._id}`);
+      closeView();
+      setNotice("Purchase invoice removed successfully");
+      await loadBase();
+      setPage(1);
+    } catch (deleteError) {
+      setError(deleteError.response?.data?.message || "Failed to remove purchase invoice");
+    } finally {
+      setDeletingPurchase(false);
+    }
+  };
+
   const showingFrom = filteredPurchases.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const showingTo = Math.min(page * PAGE_SIZE, filteredPurchases.length);
 
@@ -1011,6 +1042,14 @@ const PurchasesPage = () => {
                   ) : null}
                   <button type="button" className="primary-btn" onClick={() => printPurchase(selectedPurchase)}>
                     Print Purchase
+                  </button>
+                  <button
+                    type="button"
+                    className="danger-btn danger-btn-hard"
+                    onClick={removePurchase}
+                    disabled={deletingPurchase}
+                  >
+                    {deletingPurchase ? "Removing..." : "Remove Purchase"}
                   </button>
                 </div>
               </div>
